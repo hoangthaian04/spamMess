@@ -73,9 +73,9 @@
 
             <div style="margin-top: 15px;">
                 <label>Chọn thuật toán phân tích:</label>
-                <select name="algo">
-                    <option value="Algo-1">SVM Model (Algo-1)</option>
-                    <option value="Algo-2">Custom Model (Algo-2)</option>
+                <select name="algo" class="form-select">
+                    <option value="Algo-1" {% if algo_used == 'Algo-1' %}selected{% endif %}>SVM Model (Algo-1)</option>
+                    <option value="Algo-2" {% if algo_used == 'Algo-2' %}selected{% endif %}>Custom Model (Algo-2)</option>
                 </select>
 
 
@@ -91,13 +91,24 @@
             <p>Nội dung: <i>{{ message }}</i></p>
             <p>Thuật toán đã dùng: <b>{{ algo_used }}</b></p>
             <p>Phân loại:
-                <b style="color: {% if prediction == 1 %}red{% else %}green{% endif %};">
+                <b class="{% if prediction == 1 %}text-spam{% else %}text-ham{% endif %}">
                     {{ result }}
                 </b>
             </p>
         </div>
         {% endif %}
     </div>
+    <style>
+        .text-spam {
+            color: red;
+            font-weight: bold;
+        }
+
+        .text-ham {
+            color: green;
+            font-weight: bold;
+        }
+    </style>
 </body>
 
 </html>

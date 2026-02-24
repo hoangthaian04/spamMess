@@ -78,10 +78,11 @@ import zipfile
 import io
 import os
 import kagglehub
+from pathlib import Path
 
 def get_or_clone_dataset():
     # 1. Thiết lập đường dẫn cùng cấp trong thư mục dự án
-    base_dir = r'C:\Users\hoang\OneDrive\Desktop\spamMes\spamMess'
+    base_dir = Path(__file__).resolve().parent
     en_file_path = os.path.join(base_dir, 'spam_data.csv')
     vi_file_path = os.path.join(base_dir, 'spamDataVN.csv')
 

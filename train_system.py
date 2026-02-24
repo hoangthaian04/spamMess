@@ -36,9 +36,10 @@ from sklearn.pipeline import Pipeline
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import SVC
 from sklearn.metrics import classification_report, accuracy_score
+from pathlib import Path
 
-# 1. Cấu hình đường dẫn tuyệt đối
-BASE_DIR = r"C:\Users\hoang\OneDrive\Desktop\spamMes\spamMess"
+# 1. Cấu hình đường dẫn
+BASE_DIR = Path(__file__).resolve().parent
 DATA_PATH = os.path.join(BASE_DIR, 'spam_data.csv')
 MODEL_SAVE_DIR = os.path.join(BASE_DIR, 'Spam')
 
@@ -56,7 +57,6 @@ def train_and_evaluate():
     print(f"Tổng mẫu: {len(df)} (Ham: {len(df[y==0])}, Spam: {len(df[y==1])})")
 
     # 3. Chia dữ liệu thành 80% để học và 20% để kiểm tra thực tế
-    # Đây là bước quan trọng để lấy chỉ số báo cáo với giáo viên
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     # 4. Huấn luyện mô hình 1: Naive Bayes (Algo-2)
@@ -83,7 +83,7 @@ def train_and_evaluate():
     y_pred_svc = svc_pipeline.predict(X_test)
     acc_svc = accuracy_score(y_test, y_pred_svc)
 
-    # 6. Hiển thị báo cáo kết quả (Dùng số liệu này để đưa vào Slide/Báo cáo)
+    # 6. Hiển thị báo cáo kết quả
     print("\n" + "="*50)
     print("KẾT QUẢ ĐÁNH GIÁ HIỆU SUẤT THỰC TẾ")
     print("="*50)

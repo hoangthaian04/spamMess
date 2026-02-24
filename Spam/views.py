@@ -71,14 +71,14 @@
 
 
 
+from pathlib import Path
 from django.shortcuts import render
 import os
 import joblib
 import re
 
-# 1. Cấu hình đường dẫn tuyệt đối (Sửa tại đây)
-BASE_DIR_PATH = r"C:\Users\hoang\OneDrive\Desktop\spam-mes\spamMess"
-MODEL_DIR = os.path.join(BASE_DIR_PATH, 'Spam')
+# 1. Cấu hình đường dẫn
+MODEL_DIR = Path(__file__).resolve().parent
 
 # Danh sách tiền tố rác phổ biến tại Việt Nam
 SPAM_PREFIXES = ['qc', 'tb', 'quang cao', 'thong bao', 'ad']
