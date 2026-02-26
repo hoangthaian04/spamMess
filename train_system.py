@@ -53,6 +53,28 @@ def train_and_evaluate():
     # 2. Nạp dữ liệu bình luận TMĐT
     print("--- Đang nạp dữ liệu bình luận Thương mại điện tử... ---")
     df = pd.read_csv(DATA_PATH)
+    
+    # --- THỰC HIỆN LẤY MẪU CÂN BẰNG 50/50 ---
+    n_each = 10000  # Số lượng mẫu cho mỗi loại
+
+    # Tách riêng 2 nhóm
+    df_fake = df[df['label'] == 1]
+    df_genuine = df[df['label'] == 0]
+
+    # Kiểm tra số lượng tối thiểu để tránh lỗi nếu dữ liệu không đủ 2500 mẫu mỗi loại
+    n_fake = len(df_fake)
+    n_genuine = len(df_genuine)
+    final_n = min(n_fake, n_genuine, n_each)
+
+    # Lấy mẫu ngẫu nhiên từ mỗi nhóm
+    df_fake_sampled = df_fake.sample(final_n, random_state=42)
+    df_genuine_sampled = df_genuine.sample(final_n, random_state=42)
+
+    # Gộp lại và xáo trộn (shuffle) dữ liệu
+    df = pd.concat([df_fake_sampled, df_genuine_sampled]).sample(frac=1, random_state=42).reset_index(drop=True)
+    print(f"-> Đã lấy cân bằng: {final_n} mẫu Thật và {final_n} mẫu Ảo (Tổng: {len(df)})")
+    # ----------------------------------------
+
     X = df['text'].astype(str)
     y = df['label'] # 1: Bình luận ảo/rác, 0: Bình luận thật
     print(f"Tổng mẫu: {len(df)} (Thật: {len(df[y==0])}, Ảo: {len(df[y==1])})")
@@ -88,7 +110,7 @@ def train_and_evaluate():
     print("--- Đang huấn luyện Algo-1 (SVC - Cấu hình Balanced)... ---")
     svc_pipeline = Pipeline([
         ('tfidf', tfidf_optimized),
-        ('svc', SVC(kernel='linear', C=1.0, probability=True))
+        ('svc', SVC(kernel='linear', C=1.0, probability=False))
     ])
     svc_pipeline.fit(X_train, y_train)
     
