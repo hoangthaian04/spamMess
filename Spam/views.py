@@ -78,8 +78,7 @@ from django.shortcuts import render
 from pathlib import Path
 
 # Cấu hình đường dẫn
-BASE_DIR = Path(__file__).resolve().parent
-MODEL_DIR = os.path.join(BASE_DIR, 'Spam')
+MODEL_DIR = Path(__file__).resolve().parent
 
 def preprocess_text(text):
     """Tiền xử lý văn bản Tiếng Anh cho bình luận TMĐT"""
