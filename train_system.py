@@ -38,81 +38,82 @@ from sklearn.svm import SVC
 from sklearn.metrics import classification_report, accuracy_score
 from pathlib import Path
 
-# 1. Cấu hình đường dẫn linh hoạt
+# 1. Cấu hình đường dẫn
 BASE_DIR = Path(__file__).resolve().parent
-DATA_PATH = os.path.join(BASE_DIR, 'spam_data.csv')
+# File dữ liệu bây giờ nên là các bình luận từ sàn TMĐT
+DATA_PATH = os.path.join(BASE_DIR, 'ecommerce_reviews.csv') 
 MODEL_SAVE_DIR = os.path.join(BASE_DIR, 'Spam')
 
 def train_and_evaluate():
     # Kiểm tra file dữ liệu
     if not os.path.exists(DATA_PATH):
-        print(f"Lỗi: Không tìm thấy file {DATA_PATH}. Hãy chạy setup_data.py trước!")
+        print(f"Lỗi: Không tìm thấy file {DATA_PATH}. Hãy chuẩn bị file dữ liệu bình luận trước!")
         return
 
-    # 2. Nạp dữ liệu Tiếng Anh (UCI)
-    print("--- Đang nạp dữ liệu huấn luyện (English)... ---")
+    # 2. Nạp dữ liệu bình luận TMĐT
+    print("--- Đang nạp dữ liệu bình luận Thương mại điện tử... ---")
     df = pd.read_csv(DATA_PATH)
     X = df['text'].astype(str)
-    y = df['label']
-    print(f"Tổng mẫu: {len(df)} (Ham: {len(df[y==0])}, Spam: {len(df[y==1])})")
+    y = df['label'] # 1: Bình luận ảo/rác, 0: Bình luận thật
+    print(f"Tổng mẫu: {len(df)} (Thật: {len(df[y==0])}, Ảo: {len(df[y==1])})")
 
-    # 3. Chia dữ liệu thành 80% để học và 20% để kiểm tra
-    # stratify=y giúp đảm bảo tỉ lệ Spam/Ham cân bằng ở cả 2 tập học và thi
+    # 3. Chia dữ liệu 80/20 (giữ nguyên tỉ lệ nhãn bằng stratify)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
     )
 
-    # 4. Cấu hình TF-IDF tối ưu chuyên biệt cho Tiếng Anh
-    tfidf_english = TfidfVectorizer(
-        stop_words=None,
-        ngram_range=(1, 3),
-        max_df=1.0,
-        min_df=1,
+    # 4. Cấu hình TF-IDF tối ưu cho Bình luận ảo
+    # Sử dụng ngram_range (1, 3) để bắt các cụm từ như "shop đóng gói kỹ"
+    tfidf_optimized = TfidfVectorizer(
+        stop_words=None,      # Giữ lại toàn bộ từ để bắt cấu trúc câu "công nghiệp"
+        ngram_range=(1, 3),   
+        max_df=0.9,           
+        min_df=1,             
         sublinear_tf=True,
-        token_pattern=r"\b\w\w+\b|(?<!\w)\$|(?<!\w)!"
+        token_pattern=r"\b\w\w+\b|[!$]" # Giữ lại dấu chấm than và dấu $
     )
 
-    # 5. Huấn luyện mô hình 1: Naive Bayes (Algo-2)
+    # 5. Huấn luyện Algo-2: Naive Bayes
     print("\n--- Đang huấn luyện Algo-2 (Naive Bayes)... ---")
     nb_pipeline = Pipeline([
-        ('tfidf', tfidf_english),
-        ('nb', MultinomialNB(alpha=0.001)) # Alpha cực nhỏ giúp nhạy bén với từ mới
+        ('tfidf', tfidf_optimized),
+        ('nb', MultinomialNB(alpha=0.01))
     ])
     nb_pipeline.fit(X_train, y_train)
     
     y_pred_nb = nb_pipeline.predict(X_test)
     acc_nb = accuracy_score(y_test, y_pred_nb)
 
-    # 6. Huấn luyện mô hình 2: SVC (Algo-1) - Khuyên dùng cho Tiếng Anh
-    print("--- Đang huấn luyện Algo-1 (SVC)... ---")
+    # 6. Huấn luyện Algo-1: SVC
+    print("--- Đang huấn luyện Algo-1 (SVC - Cấu hình Balanced)... ---")
     svc_pipeline = Pipeline([
-        ('tfidf', tfidf_english),
-        ('svc', SVC(kernel='linear', C=0.5, class_weight='balanced', probability=True)) # Giảm C xuống để mô hình chấp nhận sai số tốt hơn
+        ('tfidf', tfidf_optimized),
+        ('svc', SVC(kernel='linear', C=1.0, probability=True))
     ])
     svc_pipeline.fit(X_train, y_train)
     
     y_pred_svc = svc_pipeline.predict(X_test)
     acc_svc = accuracy_score(y_test, y_pred_svc)
 
-    # 7. Hiển thị báo cáo kết quả (Sử dụng số liệu này để viết báo cáo đồ án)
+    # 7. Hiển thị báo cáo kết quả
     print("\n" + "="*50)
-    print("KẾT QUẢ ĐÁNH GIÁ HIỆU SUẤT (ENGLISH ONLY)")
+    print("KẾT QUẢ ĐÁNH GIÁ HỆ THỐNG PHÁT HIỆN BÌNH LUẬN ẢO")
     print("="*50)
     print(f"Thuật toán Algo-2 (Naive Bayes) Accuracy: {acc_nb*100:.2f}%")
-    print(classification_report(y_test, y_pred_nb, target_names=['Ham', 'Spam']))
+    print(classification_report(y_test, y_pred_nb, target_names=['Thật', 'Ảo']))
     
     print("-" * 30)
     print(f"Thuật toán Algo-1 (SVC) Accuracy: {acc_svc*100:.2f}%")
-    print(classification_report(y_test, y_pred_svc, target_names=['Ham', 'Spam']))
+    print(classification_report(y_test, y_pred_svc, target_names=['Thật', 'Ảo']))
     print("="*50)
 
-    # 8. Lưu các mô hình vào thư mục Spam
+    # 8. Lưu mô hình
     if not os.path.exists(MODEL_SAVE_DIR):
         os.makedirs(MODEL_SAVE_DIR)
         
     joblib.dump(nb_pipeline, os.path.join(MODEL_SAVE_DIR, 'myModel.pkl'))
     joblib.dump(svc_pipeline, os.path.join(MODEL_SAVE_DIR, 'mySVCModel1.pkl'))
-    print("\n--- Đã cập nhật 2 file mô hình thành công! ---")
+    print("\n--- Hệ thống đã sẵn sàng cho bài toán TMĐT! ---")
 
 if __name__ == "__main__":
     train_and_evaluate()

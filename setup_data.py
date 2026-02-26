@@ -74,44 +74,56 @@
 
 import pandas as pd
 import requests
-import zipfile
-import io
 import os
 from pathlib import Path
 
-def get_or_clone_dataset():
-    # 1. Thiết lập đường dẫn cùng cấp trong thư mục dự án
+def get_or_clone_ecommerce_dataset():
+    # 1. Thiết lập đường dẫn file dữ liệu mới
     base_dir = Path(__file__).resolve().parent
-    en_file_path = os.path.join(base_dir, 'spam_data.csv')
+    file_path = os.path.join(base_dir, 'ecommerce_reviews.csv')
 
-    print("--- Bắt đầu quy trình thu thập dữ liệu Tiếng Anh ---")
+    print("--- Bắt đầu quy trình thu thập dữ liệu Bình luận TMĐT ---")
 
-    # --- PHẦN 1: THU THẬP & GHI DỮ LIỆU TIẾNG ANH (UCI) ---
-    if not os.path.exists(en_file_path):
+    # --- PHẦN 1: TẢI DỮ LIỆU FAKE REVIEWS (AMAZON) ---
+    if not os.path.exists(file_path):
         try:
-            print("Đang tải dữ liệu Tiếng Anh chuẩn từ UCI...")
-            url_uci = "https://archive.ics.uci.edu/ml/machine-learning-databases/00228/smsspamcollection.zip"
-            r = requests.get(url_uci, timeout=15)
-            z = zipfile.ZipFile(io.BytesIO(r.content))
+            # URL bộ dữ liệu Fake Reviews từ GitHub (Dữ liệu sạch, sẵn sàng cho ML)
+            url = "https://raw.githubusercontent.com/SayamAlt/Fake-Reviews-Detection/main/fake%20reviews%20dataset.csv"
             
-            # Đọc file từ zip và chuẩn hóa cột
-            df_en = pd.read_csv(z.open('SMSSpamCollection'), sep='\t', names=['label', 'text'])
-            df_en['label'] = df_en['label'].map({'spam': 1, 'ham': 0})
+            print("Đang tải dữ liệu Amazon Reviews (khoảng 15MB)...")
+            r = requests.get(url, timeout=30)
             
-            # Xử lý làm sạch sơ bộ (loại bỏ dòng trống và trùng lặp)
-            df_en = df_en.dropna().drop_duplicates()
+            # Đọc dữ liệu từ nội dung tải về
+            from io import StringIO
+            df = pd.read_csv(StringIO(r.text))
             
-            # Ghi vào file spam_data.csv
-            df_en.to_csv(en_file_path, index=False, encoding='utf-8')
-            print(f"-> Thành công! Đã lưu {len(df_en)} mẫu Tiếng Anh sạch vào {en_file_path}")
+            # 2. Chuẩn hóa dữ liệu
+            # Dataset này thường có cột: 'category', 'rating', 'label', 'text_'
+            # Chúng ta sẽ chỉ lấy cột văn bản và nhãn
+            df = df[['text_', 'label']]
+            df.columns = ['text', 'label_raw']
+            
+            # 3. Chuyển đổi nhãn: 'fake' -> 1 (Spam/Ảo), 'genuine' -> 0 (Thật)
+            # Lưu ý: Tùy vào dataset, nhãn có thể là 'OR'/'CG' hoặc 'fake'/'genuine'
+            # Ở đây chúng ta chuẩn hóa về 1 và 0
+            df['label'] = df['label_raw'].apply(lambda x: 1 if str(x).lower() in ['fake', 'cg'] else 0)
+            
+            # Xóa cột nhãn gốc và các dòng trống/trùng
+            df = df[['text', 'label']].dropna().drop_duplicates()
+            
+            # 4. Ghi vào file ecommerce_reviews.csv
+            df.to_csv(file_path, index=False, encoding='utf-8')
+            print(f"-> Thành công! Đã lưu {len(df)} bình luận vào {file_path}")
+            print(f"Phân bổ nhãn: \n{df['label'].value_counts()}")
+            
         except Exception as e:
-            print(f"Lỗi khi tải hoặc xử lý dữ liệu: {e}")
+            print(f"Lỗi khi tải dữ liệu TMĐT: {e}")
     else:
-        print(f"--- File dữ liệu '{en_file_path}' đã sẵn sàng. ---")
+        print(f"--- File dữ liệu '{file_path}' đã tồn tại. ---")
 
-    # Đọc lại để kiểm tra và trả về dữ liệu (dùng cho train_system.py)
-    df_final = pd.read_csv(en_file_path)
+    # Đọc lại để kiểm tra
+    df_final = pd.read_csv(file_path)
     return df_final
 
 if __name__ == "__main__":
-    get_or_clone_dataset()
+    get_or_clone_ecommerce_dataset()

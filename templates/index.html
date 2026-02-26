@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ thống nhận diện Spam</title>
+    <title>E-commerce Fake Review Detector</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -57,58 +57,50 @@
     </style>
 </head>
 
-<body>
-    <div class="container">
-        <h2>Phần mềm nhận diện Tin nhắn rác</h2>
+    <body>
+        <div class="container">
+            <h2>Fake Review Detector</h2>
+            <p style="text-align: center; color: #7f8c8d;">Identify suspicious or fake product reviews instantly.</p>
 
-        {% if error %}
-        <p class="error">{{ error }}</p>
-        {% endif %}
+            {% if error %}
+                <div class="error">{{ error }}</div>
+            {% endif %}
 
-        <form action="/check" method="post">
-            {% csrf_token %}
-            <label for="rawdata">Nội dung tin nhắn:</label>
-            <textarea name="rawdata" id="rawdata" placeholder="Nhập tin nhắn cần kiểm tra tại đây..."
-                rows="5">{{ message }}</textarea>
+            <form action="/check" method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="rawdata"><b>Product Review Content:</b></label>
+                    <textarea name="rawdata" id="rawdata" placeholder="Paste the customer review here (English)..." rows="6">{{ message }}</textarea>
+                </div>
 
-            <div style="margin-top: 15px;">
-                <label>Chọn thuật toán phân tích:</label>
-                <select name="algo" class="form-select">
-                    <option value="Algo-1" {% if algo_used == 'Algo-1' %}selected{% endif %}>SVM Model (Algo-1)</option>
-                    <option value="Algo-2" {% if algo_used == 'Algo-2' %}selected{% endif %}>Custom Model (Algo-2)</option>
-                </select>
+                <div class="form-group">
+                    <label><b>Analysis Algorithm:</b></label>
+                    <select name="algo" style="width: 100%; padding: 10px; border-radius: 5px;">
+                        <option value="Algo-1" {% if algo_used == 'Algo-1' %}selected{% endif %}>SVM Model (Recommended)</option>
+                        <option value="Algo-2" {% if algo_used == 'Algo-2' %}selected{% endif %}>Naive Bayes Model</option>
+                    </select>
+                </div>
 
+                <button type="submit">Analyze Review</button>
+            </form>
 
-
+            {% if result %}
+            <div class="result-box">
+                <h3>Analysis Result:</h3>
+                <p>Content: <i>"{{ message }}"</i></p>
+                <p>Algorithm: <b>{{ algo_used }}</b></p>
+                <p>Classification: 
+                    <span class="{% if prediction == 1 %}text-spam{% else %}text-ham{% endif %}">
+                        {{ result }}
+                    </span>
+                </p>
             </div>
-
-            <button type="submit">Kiểm tra ngay</button>
-        </form>
-
-        {% if result %}
-        <div class="result-box">
-            <h3>Kết quả phân tích:</h3>
-            <p>Nội dung: <i>{{ message }}</i></p>
-            <p>Thuật toán đã dùng: <b>{{ algo_used }}</b></p>
-            <p>Phân loại:
-                <b class="{% if prediction == 1 %}text-spam{% else %}text-ham{% endif %}">
-                    {{ result }}
-                </b>
-            </p>
+            {% endif %}
         </div>
-        {% endif %}
-    </div>
-    <style>
-        .text-spam {
-            color: red;
-            font-weight: bold;
-        }
-
-        .text-ham {
-            color: green;
-            font-weight: bold;
-        }
-    </style>
-</body>
+        <style>
+            .text-spam { color: #e74c3c; font-weight: bold; }
+            .text-ham { color: #27ae60; font-weight: bold; }
+        </style>
+    </body>
 
 </html>

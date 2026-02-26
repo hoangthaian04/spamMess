@@ -71,74 +71,70 @@
 
 
 
-from pathlib import Path
-from django.shortcuts import render
 import os
 import joblib
 import re
+from django.shortcuts import render
+from pathlib import Path
 
-# 1. Cấu hình đường dẫn
-MODEL_DIR = Path(__file__).resolve().parent
-
-# Danh sách tiền tố rác phổ biến tại Việt Nam
-SPAM_PREFIXES = ['qc', 'tb', 'quang cao', 'thong bao', 'ad']
-
-def index(request):
-    """Hiển thị giao diện chính"""
-    return render(request, 'index.html')
+# Cấu hình đường dẫn
+BASE_DIR = Path(__file__).resolve().parent
+MODEL_DIR = os.path.join(BASE_DIR, 'Spam')
 
 def preprocess_text(text):
-    """Làm sạch văn bản để mô hình xử lý chuẩn xác hơn"""
-    # Giữ lại các ký tự $, %, [, ] vì chúng thường xuất hiện trong tin nhắn rác
+    """Tiền xử lý văn bản Tiếng Anh cho bình luận TMĐT"""
     text = text.lower().strip()
-    text = re.sub(r'[^a-z0-9\s$%\[\]]', '', text)
+    # Giữ lại các ký tự $, %, ! vì đây là dấu hiệu của bình luận quảng cáo/ảo
+    text = re.sub(r'[^a-z0-9\s$%!]', '', text)
     return text
 
 def check_heuristics(text):
-    for prefix in SPAM_PREFIXES:
-        if text.startswith(prefix):
-            return 1  # 1 là nhãn Spam
+    """Bộ lọc nhanh các từ khóa rác phổ biến trong Review TMĐT"""
+    # Các từ khóa thường thấy trong bình luận ảo/quảng cáo Tiếng Anh
+    SPAM_KEYWORDS = ['free gift', 'win cash', 'click here', 'contact me', 'whatsapp']
+    text_lower = text.lower()
+    for word in SPAM_KEYWORDS:
+        if word in text_lower:
+            return 1
     return None
 
+def index(request):
+    return render(request, 'index.html')
+
 def checkSpam(request):
-    """Xử lý dự đoán tin nhắn từ giao diện"""
     if request.method == 'POST':
         raw_message = request.POST.get('rawdata', '')
         algo_choice = request.POST.get('algo', 'Algo-1')
-        
+
         if not raw_message:
-            return render(request, 'index.html', {'error': 'Vui lòng nhập nội dung!'})
+            return render(request, 'index.html', {'error': 'Please enter a review to check!'})
 
-        # Bước 1: Tiền xử lý
-        clean_message = preprocess_text(raw_message)
+        # 1. Tiền xử lý
+        clean_text = preprocess_text(raw_message)
 
-        # Bước 2: Kiểm tra Heuristics
-        prediction = check_heuristics(clean_message)
+        # 2. Kiểm tra bộ lọc nhanh
+        prediction = check_heuristics(clean_text)
 
-        # Bước 3: Machine Learning
         if prediction is None:
+            # 3. Sử dụng Machine Learning nếu bộ lọc nhanh không khớp
             model_name = 'mySVCModel1.pkl' if algo_choice == 'Algo-1' else 'myModel.pkl'
             model_path = os.path.join(MODEL_DIR, model_name)
 
-            # Kiểm tra file mô hình có tồn tại không
-            if not os.path.exists(model_path):
-                return render(request, 'index.html', {
-                    'error': f'Không tìm thấy file mô hình tại: {model_path}. Hãy chạy train_system.py trước!',
-                    'message': raw_message
-                })
+            if os.path.exists(model_path):
+                try:
+                    model = joblib.load(model_path)
+                    prediction = model.predict([clean_text])[0]
+                except Exception as e:
+                    return render(request, 'index.html', {'error': f'Model error: {str(e)}'})
+            else:
+                return render(request, 'index.html', {'error': 'Model not found. Please train the system first!'})
 
-            try:
-                model = joblib.load(model_path)
-                prediction = model.predict([clean_message])[0]
-            except Exception as e:
-                return render(request, 'index.html', {'error': f'Lỗi khi tải mô hình: {e}'})
-
-        # Bước 4: Trả kết quả
-        result = "TIN NHẮN RÁC (Spam)" if prediction == 1 else "TIN NHẮN THÔNG THƯỜNG (Ham)"
+        # 4. Trả về kết quả (Đã đổi tên nhãn phù hợp TMĐT)
+        result = "FAKE / SPAM REVIEW" if prediction == 1 else "GENUINE REVIEW"
         
         return render(request, 'index.html', {
-            'message': raw_message,
             'result': result,
+            'message': raw_message,
             'prediction': prediction,
             'algo_used': algo_choice
         })
