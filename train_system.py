@@ -40,7 +40,6 @@ from pathlib import Path
 
 # 1. Cấu hình đường dẫn
 BASE_DIR = Path(__file__).resolve().parent
-# File dữ liệu bây giờ nên là các bình luận từ sàn TMĐT
 DATA_PATH = os.path.join(BASE_DIR, 'ecommerce_reviews.csv') 
 MODEL_SAVE_DIR = os.path.join(BASE_DIR, 'Spam')
 
@@ -61,7 +60,7 @@ def train_and_evaluate():
     df_fake = df[df['label'] == 1]
     df_genuine = df[df['label'] == 0]
 
-    # Kiểm tra số lượng tối thiểu để tránh lỗi nếu dữ liệu không đủ 2500 mẫu mỗi loại
+    # Kiểm tra số lượng tối thiểu để tránh lỗi nếu dữ liệu không đủ mẫu mỗi loại
     n_fake = len(df_fake)
     n_genuine = len(df_genuine)
     final_n = min(n_fake, n_genuine, n_each)
@@ -85,7 +84,6 @@ def train_and_evaluate():
     )
 
     # 4. Cấu hình TF-IDF tối ưu cho Bình luận ảo
-    # Sử dụng ngram_range (1, 3) để bắt các cụm từ như "shop đóng gói kỹ"
     tfidf_optimized = TfidfVectorizer(
         stop_words=None,      # Giữ lại toàn bộ từ để bắt cấu trúc câu "công nghiệp"
         ngram_range=(1, 3),   

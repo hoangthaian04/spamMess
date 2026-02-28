@@ -81,14 +81,14 @@ from pathlib import Path
 MODEL_DIR = Path(__file__).resolve().parent
 
 def preprocess_text(text):
-    """Tiền xử lý văn bản Tiếng Anh cho bình luận TMĐT"""
+    #Tiền xử lý văn bản Tiếng Anh cho bình luận TMĐT
     text = text.lower().strip()
     # Giữ lại các ký tự $, %, ! vì đây là dấu hiệu của bình luận quảng cáo/ảo
     text = re.sub(r'[^a-z0-9\s$%!]', '', text)
     return text
 
 def check_heuristics(text):
-    """Bộ lọc nhanh các từ khóa rác phổ biến trong Review TMĐT"""
+    # Lọc nhanh các từ khóa rác phổ biến trong Review TMĐT
     # Các từ khóa thường thấy trong bình luận ảo/quảng cáo Tiếng Anh
     SPAM_KEYWORDS = ['free gift', 'win cash', 'click here', 'contact me', 'whatsapp']
     text_lower = text.lower()
@@ -128,7 +128,7 @@ def checkSpam(request):
             else:
                 return render(request, 'index.html', {'error': 'Model not found. Please train the system first!'})
 
-        # 4. Trả về kết quả (Đã đổi tên nhãn phù hợp TMĐT)
+        # 4. Trả về kết quả
         result = "FAKE / SPAM REVIEW" if prediction == 1 else "GENUINE REVIEW"
         
         return render(request, 'index.html', {

@@ -98,14 +98,12 @@ def get_or_clone_ecommerce_dataset():
             df = pd.read_csv(StringIO(r.text))
             
             # 2. Chuẩn hóa dữ liệu
-            # Dataset này thường có cột: 'category', 'rating', 'label', 'text_'
-            # Chúng ta sẽ chỉ lấy cột văn bản và nhãn
+            # chỉ lấy cột văn bản và nhãn
             df = df[['text_', 'label']]
             df.columns = ['text', 'label_raw']
             
             # 3. Chuyển đổi nhãn: 'fake' -> 1 (Spam/Ảo), 'genuine' -> 0 (Thật)
-            # Lưu ý: Tùy vào dataset, nhãn có thể là 'OR'/'CG' hoặc 'fake'/'genuine'
-            # Ở đây chúng ta chuẩn hóa về 1 và 0
+            # Chuẩn hóa về 1 và 0
             df['label'] = df['label_raw'].apply(lambda x: 1 if str(x).lower() in ['fake', 'cg'] else 0)
             
             # Xóa cột nhãn gốc và các dòng trống/trùng
